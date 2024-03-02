@@ -14,6 +14,10 @@ public partial class BookRenterDbContext : DbContext
     {
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        => optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Initial Catalog=BookRenterDB;Integrated Security=SSPI; MultipleActiveResultSets=true;TrustServerCertificate=True;");
+
+
     public virtual DbSet<Cart> Carts { get; set; }
 
     public virtual DbSet<Category> Categories { get; set; }
