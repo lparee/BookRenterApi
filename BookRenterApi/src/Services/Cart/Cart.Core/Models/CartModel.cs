@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Carts.Core.Entities;
+using System.ComponentModel.DataAnnotations;
 
 namespace Carts.Core.Models
 {
@@ -8,11 +9,7 @@ namespace Carts.Core.Models
 
         public int? UserId { get; set; }
 
-        [Required(ErrorMessage = "ProductId is required.")]
-        public int ProductId { get; set; }
-
-        [Required(ErrorMessage = "Quantity is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0.")]
-        public required int Quantity { get; set; }
+        [CustomValidator.CustomValidator.UniqueProduct(ErrorMessage = "Duplicate books are not allowed")]
+        public required IList<BookInventory> Books { get; set; }
     }
 }

@@ -1,17 +1,17 @@
-﻿using Carts.Core.Models;
+﻿using Carts.Core.Entities;
+using Carts.Core.Models;
 using Carts.Data;
+using System.Collections;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Carts.Service
 {
     public interface ICartService
     {
-        Task<CartModel?> GetCartByIdAsync(int cartId);
-        Task<List<CartModel>> GetCartsByUserIdAsync(string LoginId);
-        Task<CartModel> AddToCartAsync(CartModel cart, string LoginId);
-        Task<CartModel> UpdateCartAsync(CartModel cart);
-        Task<bool> RemoveFromCartAsync(int cartId);
-        Task<bool> IsCartIdValidAsync(int cartId, string LoginId);
-        Task<bool> IsProductIdValidAsync(int productId);
+        Task<BooksModel?> GetBookByNameAndAuthor(string Name, string Author);
+        Task<CartModel> AddToCart(Cart cart, string LoginId);
+        Task<CartModel> UpdateCartAsync(Cart cart);
+        Task<bool> CheckOut(int Id);
     }
 
     public class CartService : ICartService
@@ -60,6 +60,11 @@ namespace Carts.Service
             return await _cartRepository.IsCartIdValidAsync(cartId, LoginId);
         }
 
+        public async Task<BooksModel?> GetBookByNameAndAuthor(string Name, string Author)
+        {
+            var books = await _cartRepository.GetBookByNameAndAuthor(Name, Author);
+            return  MapToBookModel(books);
+        }
         public async Task<bool> IsProductIdValidAsync(int productId)
         {
             // Implement the logic to check if the productId is valid
@@ -70,14 +75,26 @@ namespace Carts.Service
             return product != null;
         }
 
+        private static BooksModel? MapToBookModel(Carts.Core.Entities.BookInventory? book)
+        {
+            if(book == null)
+                return null;
+
+            return new BooksModel
+            {
+                BookId = book.BookId,
+                Author = book.Author,
+                BookName = book.BookName,
+                Price = book.Price
+            };
+        }
         private static CartModel MapToCartModel(Carts.Core.Entities.Cart cart)
         {
             return new CartModel
             {
                 CartId = cart.CartId,
                 UserId = cart.UserId,
-                ProductId = cart.BookId,
-                Quantity = cart.Quantity
+                Books = cart.Books
             };
         }
 
@@ -87,8 +104,7 @@ namespace Carts.Service
             {
                 CartId = cartModel.CartId,
                 UserId = cartModel.UserId,
-                BookId = cartModel.ProductId,
-                Quantity = cartModel.Quantity
+                Books = cartModel.Books
             };
         }
     }

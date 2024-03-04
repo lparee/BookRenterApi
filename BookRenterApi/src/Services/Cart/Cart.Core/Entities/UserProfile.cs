@@ -15,19 +15,5 @@ public partial class UserProfile
 
     public string Email { get; set; } = null!;
 
-    public string LoginId { get; set; } = null!;
-
-    //public virtual ICollection<Address> Addresses { get; set; } = new List<Address>();
-
     public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
-
-    //public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
-
-    //public virtual ICollection<ProductReview> ProductReviews { get; set; } = new List<ProductReview>();
-
-   // public virtual ICollection<UserActivityLog> UserActivityLogs { get; set; } = new List<UserActivityLog>();
-
-    //public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
-
-    //public virtual ICollection<Wishlist> Wishlists { get; set; } = new List<Wishlist>();
 }

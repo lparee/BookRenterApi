@@ -6,13 +6,10 @@ namespace Carts.Data
 {
     public interface ICartRepository
     {
-        Task<Cart> GetCartByIdAsync(int cartId);
-        Task<List<Cart>> GetCartsByUserIdAsync(string LoginId);
-        Task<Cart> AddToCartAsync(Cart cart, string LoginId);
+        Task<BookInventory?> GetBookByNameAndAuthor(string Name, string Author);
+        Task<Cart> AddToCart(Cart cart, string LoginId);
         Task<Cart> UpdateCartAsync(Cart cart);
-        Task<bool> RemoveFromCartAsync(int cartId);
-        Task<bool> IsCartIdValidAsync(int cartId, string LoginId);
-        Task<BookInventory?> GetProductByIdAsync(int productId);
+        Task<bool> CheckOut(int Id);
     }
 
     public class CartRepository : ICartRepository
@@ -24,30 +21,19 @@ namespace Carts.Data
             _dbContext = dbContext;
         }
 
-        public async Task<Cart?> GetCartByIdAsync(int cartId)
+        public async Task<BookInventory?> GetBookByNameAndAuthor(string Name, string Author)
         {
-            return await _dbContext.Carts
-                .Include(c => c.Book)
-                .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.CartId == cartId);
+            return await _dbContext.BooksCollection
+                .FirstOrDefaultAsync(p => p.BookName.Equals(Name) && !string.IsNullOrEmpty(Author) ? p.Author.Equals(Author) : true);
         }
-
-        public async Task<List<Cart>> GetCartsByUserIdAsync(string LoginId)
-        {
-            return await _dbContext.Carts
-                .Include(c => c.Book)
-                .Include(c => c.User)
-                .Where(c => c.User.LoginId == LoginId)
-                .ToListAsync();
-        }
-
-        public async Task<Cart> AddToCartAsync(Cart cart, string LoginId)
+        public async Task<Cart> AddToCart(Cart cart, string LoginId)
         {
             var userProfile = _dbContext.UserProfiles.FirstOrDefault(p => p.LoginId == LoginId);
-            if(userProfile.Carts==null)
+            if (userProfile != null && userProfile.Carts == null)
+            {
                 userProfile.Carts = new List<Cart>();
-
-            userProfile.Carts.Add(cart);
+                userProfile.Carts.Add(cart);
+            }
             await _dbContext.SaveChangesAsync();
             return cart;
         }
@@ -59,36 +45,19 @@ namespace Carts.Data
             return cart;
         }
 
-        public async Task<bool> RemoveFromCartAsync(int cartId)
+        public async Task<bool> CheckOut(int Id)
         {
-            var cart = await _dbContext.Carts.FindAsync(cartId);
+            var cart = await _dbContext.Carts.Include(b => b.Books).FirstOrDefaultAsync( c => c.CartId == Id);
             if (cart != null)
             {
+                cart.Books.ToList().ForEach(b => b.Quantity = (b.Quantity --));
+                _dbContext.Carts.Update(cart);
                 _dbContext.Carts.Remove(cart);
                 await _dbContext.SaveChangesAsync();
                 return true;
             }
             return false;
         }
-
-        public async Task<bool> IsCartIdValidAsync(int cartId, string LoginId)
-        {
-            var isValid = await _dbContext.Carts
-                .Join(_dbContext.UserProfiles,
-                    cart => cart.UserId,
-                    user => user.UserId,
-                    (cart, user) => new { Cart = cart, User = user })
-                .AnyAsync(joined => joined.Cart.CartId == cartId && joined.User.LoginId == LoginId);
-
-            return isValid;
-        }
-
-        public async Task<BookInventory?> GetProductByIdAsync(int productId)
-        {
-            return await _dbContext.BooksCollection
-                .FirstOrDefaultAsync(p => p.BookId == productId);
-        }
-
     }
 
 }
