@@ -16,5 +16,5 @@ public partial class BookInventory
 
     public int Quantity { get; set; }
 
-    public virtual Cart Carts { get; set; } = null!;
+    public virtual ICollection<CartBookMapping> Mappings { get; set; } = new List<CartBookMapping>();
 }

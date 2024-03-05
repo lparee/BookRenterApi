@@ -11,6 +11,5 @@ public partial class Cart
     public int? UserId { get; set; }
     [NotMapped]
     public required IList<int> BooksLst { get; set; }
-
-    public virtual ICollection<BookInventory> Books { get; set; } = new List<BookInventory>();
+    public virtual ICollection<CartBookMapping> Mappings { get; set; } = new List<CartBookMapping>();
 }

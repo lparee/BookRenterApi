@@ -21,7 +21,7 @@ public partial class BookRenterDbContext : DbContext
 
 
     public virtual DbSet<Cart> Carts { get; set; }
-
+    public virtual DbSet<CartBookMapping> CartBookMapping { get; set; }
     public virtual DbSet<BookInventory> BooksCollection { get; set; }
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
@@ -35,9 +35,9 @@ public partial class BookRenterDbContext : DbContext
 
             entity.ToTable("Cart");
 
-            entity.HasMany(e => e.Books)
+            entity.HasMany(e => e.Mappings)
         .WithOne(e => e.Carts)
-        .HasForeignKey(e => e.CartId).HasConstraintName("FK_Carts_Book");
+        .HasForeignKey(e => e.CartId).HasConstraintName("FK_Carts_Map");
             ;
         });
         
@@ -49,6 +49,9 @@ public partial class BookRenterDbContext : DbContext
             entity.ToTable("BookInventory");
 
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
+            entity.HasMany(e => e.Mappings)
+        .WithOne(e => e.Books)
+        .HasForeignKey(e => e.CartId).HasConstraintName("FK_Book_Map");
         });
 
         modelBuilder.Entity<UserProfile>(entity =>

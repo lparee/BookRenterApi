@@ -15,6 +15,7 @@ namespace Carts.Service
         Task<CartModel> AddToCart(CartModel cart, int userId);
         Task<CartModel> UpdateCart(CartModel cart);
         Task<bool> CheckOut(int cartId);
+        Task<CartModel> GetCartByUserId(int userId);
     }
 
     public class CartService : ICartService
@@ -31,6 +32,12 @@ namespace Carts.Service
             var cartEntity = MapToCartEntity(cart);
             var addedCart = await _cartRepository.AddToCart(cartEntity, userId);
             return MapToCartModel(addedCart);
+        }
+
+        public async Task<CartModel> GetCartByUserId(int userId)
+        {
+            var cart = await _cartRepository.GetCartByUserId(userId);
+            return  MapToCartModel(cart);
         }
 
         public async Task<CartModel> UpdateCart(CartModel cart)
@@ -67,14 +74,22 @@ namespace Carts.Service
             ));
             return tempbookmodel;
         }
-        private static CartModel MapToCartModel(Carts.Core.Entities.Cart cart)
+        private static CartModel MapToCartModel(Carts.Core.Entities.Cart? cart)
         {
-            return new CartModel
-            {
-                CartId = cart.CartId,
-                UserId = cart.UserId,
-                Books = cart.Books.Select(c => c.BookId).ToList()
-            };
+            if (cart != null)
+                return new CartModel
+                {
+                    CartId = cart.CartId,
+                    UserId = cart.UserId,
+                    Books = cart.Mappings.Select(c => c.BookId).ToList()
+                };
+            else
+                return new CartModel
+                {
+                    CartId = -1,
+                    UserId = -1,
+                    Books = new List<int>()
+                };
         }
 
         private static Carts.Core.Entities.Cart MapToCartEntity(CartModel cartModel)

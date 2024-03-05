@@ -20,5 +20,17 @@ namespace BookRenterApiTest
             //assert
             Assert.True(response.IsCompleted);
         }
+
+        [Fact]
+        public void GetBookByAuthor()
+        {
+            CartController cartCon = new CartController(cartservice);
+            //arrange
+            cartservice.GetBookByNameAndAuthor("", "").Returns(new List<BooksModel>());
+            //act
+            var response = cartCon.GetBookByAuthor("Mike");
+            //assert
+            Assert.True(response.IsCompleted);
+        }
     }
 }
