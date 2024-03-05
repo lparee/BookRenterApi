@@ -33,7 +33,7 @@ namespace Cart.Web
                 var configuration = builder.Configuration;
                 // Add services to the container.
 
-                builder.Services.AddApplicationInsightsTelemetry();
+                //builder.Services.AddApplicationInsightsTelemetry();
 
                 builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
                 .ReadFrom.Configuration(context.Configuration)
@@ -41,11 +41,9 @@ namespace Cart.Web
                 .WriteTo.Console(new ExpressionTemplate(
                     // Include trace and span ids when present.
                     "[{@t:HH:mm:ss} {@l:u3}{#if @tr is not null} ({substring(@tr,0,4)}:{substring(@sp,0,4)}){#end}] {@m}\n{@x}"))
-                .WriteTo.ApplicationInsights(
-                  services.GetRequiredService<TelemetryConfiguration>(),
-                  TelemetryConverter.Traces));
+                );
 
-                Log.Information("Starting the application Cart and Wishlist Service...");
+                Log.Information("Starting the Book renter API...");
 
 
                 builder.Services.AddControllers()

@@ -10,6 +10,6 @@ namespace Carts.Core.Models
         public int? UserId { get; set; }
 
         [CustomValidator.CustomValidator.UniqueProduct(ErrorMessage = "Duplicate books are not allowed")]
-        public required IList<BookInventory> Books { get; set; }
+        public required IList<int> Books { get; set; }
     }
 }

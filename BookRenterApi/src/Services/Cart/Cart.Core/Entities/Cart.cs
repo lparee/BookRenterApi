@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Carts.Core.Entities;
 
@@ -8,10 +9,8 @@ public partial class Cart
     public int CartId { get; set; }
 
     public int? UserId { get; set; }
+    [NotMapped]
+    public required IList<int> BooksLst { get; set; }
 
-    public int Quantity { get; set; }
-
-    public virtual IList<BookInventory> Books { get; set; } = new List<BookInventory>();
-
-    public virtual UserProfile? User { get; set; }
+    public virtual ICollection<BookInventory> Books { get; set; } = new List<BookInventory>();
 }

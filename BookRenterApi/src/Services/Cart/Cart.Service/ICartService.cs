@@ -2,16 +2,19 @@
 using Carts.Core.Models;
 using Carts.Data;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net;
 using System.Reflection.Metadata.Ecma335;
 
 namespace Carts.Service
 {
     public interface ICartService
     {
-        Task<BooksModel?> GetBookByNameAndAuthor(string Name, string Author);
-        Task<CartModel> AddToCart(Cart cart, string LoginId);
-        Task<CartModel> UpdateCartAsync(Cart cart);
-        Task<bool> CheckOut(int Id);
+        Task<IEnumerable<BooksModel>> GetBookByNameAndAuthor(string name, string author);
+        Task<CartModel> AddToCart(CartModel cart, int userId);
+        Task<CartModel> UpdateCart(CartModel cart);
+        Task<bool> CheckOut(int cartId);
     }
 
     public class CartService : ICartService
@@ -23,70 +26,46 @@ namespace Carts.Service
             _cartRepository = cartRepository;
         }
 
-        public async Task<CartModel?> GetCartByIdAsync(int cartId)
-        {
-            var cart = await _cartRepository.GetCartByIdAsync(cartId);
-            return cart != null ? MapToCartModel(cart) : null;
-        }
-
-        public async Task<List<CartModel>> GetCartsByUserIdAsync(string LoginId)
-        {
-            var carts = await _cartRepository.GetCartsByUserIdAsync(LoginId);
-            return carts.Select(MapToCartModel).ToList();
-        }
-
-        public async Task<CartModel> AddToCartAsync(CartModel cart, string LoginId)
+        public async Task<CartModel> AddToCart(CartModel cart, int userId)
         {
             var cartEntity = MapToCartEntity(cart);
-            var addedCart = await _cartRepository.AddToCartAsync(cartEntity, LoginId);
+            var addedCart = await _cartRepository.AddToCart(cartEntity, userId);
             return MapToCartModel(addedCart);
         }
 
-        public async Task<CartModel> UpdateCartAsync(CartModel cart)
+        public async Task<CartModel> UpdateCart(CartModel cart)
         {
             var cartEntity = MapToCartEntity(cart);
-            var updatedCart = await _cartRepository.UpdateCartAsync(cartEntity);
+            var updatedCart = await _cartRepository.UpdateCart(cartEntity);
             return MapToCartModel(updatedCart);
         }
 
-        public async Task<bool> RemoveFromCartAsync(int cartId)
+        public async Task<bool> CheckOut(int cartId)
         {
-            return await _cartRepository.RemoveFromCartAsync(cartId);
+            return await _cartRepository.CheckOut(cartId);
         }
 
-        public async Task<bool> IsCartIdValidAsync(int cartId, string LoginId)
+        public async Task<IEnumerable<BooksModel>> GetBookByNameAndAuthor(string name, string author)
         {
-            // Assuming you have a method in the repository to check cart validity using LoginId
-            return await _cartRepository.IsCartIdValidAsync(cartId, LoginId);
+            var books = await _cartRepository.GetBookByNameAndAuthor(name, author);
+            return MapToBookModel(books);
         }
-
-        public async Task<BooksModel?> GetBookByNameAndAuthor(string Name, string Author)
+        private static IEnumerable<BooksModel> MapToBookModel(IEnumerable<Carts.Core.Entities.BookInventory?> book)
         {
-            var books = await _cartRepository.GetBookByNameAndAuthor(Name, Author);
-            return  MapToBookModel(books);
-        }
-        public async Task<bool> IsProductIdValidAsync(int productId)
-        {
-            // Implement the logic to check if the productId is valid
-            // You might want to check if the product with the given ID exists in your database
+            List<BooksModel> tempbookmodel = new List<BooksModel>();
 
-            // Example:
-            var product = await _cartRepository.GetProductByIdAsync(productId);
-            return product != null;
-        }
+            if (book == null || !book.Any())
+                return tempbookmodel;
 
-        private static BooksModel? MapToBookModel(Carts.Core.Entities.BookInventory? book)
-        {
-            if(book == null)
-                return null;
-
-            return new BooksModel
+            book.ToList().ForEach(b => tempbookmodel.Add(new BooksModel
             {
-                BookId = book.BookId,
-                Author = book.Author,
-                BookName = book.BookName,
-                Price = book.Price
-            };
+                BookId = b.BookId,
+                Author = b.Author,
+                BookName = b.BookName,
+                Price = b.Price
+            }
+            ));
+            return tempbookmodel;
         }
         private static CartModel MapToCartModel(Carts.Core.Entities.Cart cart)
         {
@@ -94,7 +73,7 @@ namespace Carts.Service
             {
                 CartId = cart.CartId,
                 UserId = cart.UserId,
-                Books = cart.Books
+                Books = cart.Books.Select(c => c.BookId).ToList()
             };
         }
 
@@ -104,9 +83,8 @@ namespace Carts.Service
             {
                 CartId = cartModel.CartId,
                 UserId = cartModel.UserId,
-                Books = cartModel.Books
+                BooksLst = cartModel.Books
             };
         }
     }
-
 }

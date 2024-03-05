@@ -17,7 +17,5 @@ namespace Carts.Core.Models
         public string LastName { get; set; } = null!;
 
         public string Email { get; set; } = null!;
-
-        public string LoginId { get; set; } = null!;
     }
 }

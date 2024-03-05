@@ -1,14 +1,15 @@
 ﻿using Carts.Core.Entities;
 using Carts.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Collections;
 
 namespace Carts.Data
 {
     public interface ICartRepository
     {
-        Task<BookInventory?> GetBookByNameAndAuthor(string Name, string Author);
-        Task<Cart> AddToCart(Cart cart, string LoginId);
-        Task<Cart> UpdateCartAsync(Cart cart);
+        Task<IEnumerable<BookInventory?>> GetBookByNameAndAuthor(string name, string author);
+        Task<Cart> AddToCart(Cart cart, int userId);
+        Task<Cart> UpdateCart(Cart cart);
         Task<bool> CheckOut(int Id);
     }
 
@@ -21,24 +22,20 @@ namespace Carts.Data
             _dbContext = dbContext;
         }
 
-        public async Task<BookInventory?> GetBookByNameAndAuthor(string Name, string Author)
+        public async Task<IEnumerable<BookInventory?>> GetBookByNameAndAuthor(string name, string author)
         {
-            return await _dbContext.BooksCollection
-                .FirstOrDefaultAsync(p => p.BookName.Equals(Name) && !string.IsNullOrEmpty(Author) ? p.Author.Equals(Author) : true);
+            return await _dbContext.BooksCollection.
+                Where(p => p.BookName.Equals(name) || p.Author.Equals(author)).ToListAsync();
         }
-        public async Task<Cart> AddToCart(Cart cart, string LoginId)
+        public async Task<Cart> AddToCart(Cart cart, int userId)
         {
-            var userProfile = _dbContext.UserProfiles.FirstOrDefault(p => p.LoginId == LoginId);
-            if (userProfile != null && userProfile.Carts == null)
-            {
-                userProfile.Carts = new List<Cart>();
-                userProfile.Carts.Add(cart);
-            }
+            _dbContext.Add(cart);
+
             await _dbContext.SaveChangesAsync();
             return cart;
         }
 
-        public async Task<Cart> UpdateCartAsync(Cart cart)
+        public async Task<Cart> UpdateCart(Cart cart)
         {
             _dbContext.Carts.Update(cart);
             await _dbContext.SaveChangesAsync();

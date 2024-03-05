@@ -4,6 +4,7 @@ using Carts.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Carts.Data.Migrations
 {
     [DbContext(typeof(BookRenterDbContext))]
-    partial class BookRenterDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240304185459_DBupdate1")]
+    partial class DBupdate1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -63,16 +66,16 @@ namespace Carts.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartId"));
 
-                    b.Property<int?>("UserId")
+                    b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<int?>("UserProfileUserId")
+                    b.Property<int?>("UserId")
                         .HasColumnType("int");
 
                     b.HasKey("CartId")
                         .HasName("PK_Cart_CartId");
 
-                    b.HasIndex("UserProfileUserId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Cart", (string)null);
                 });
@@ -121,16 +124,19 @@ namespace Carts.Data.Migrations
                         .HasForeignKey("CartId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_Carts_Book");
+                        .HasConstraintName("FK_Cart_Book");
 
                     b.Navigation("Carts");
                 });
 
             modelBuilder.Entity("Carts.Core.Entities.Cart", b =>
                 {
-                    b.HasOne("Carts.Core.Entities.UserProfile", null)
+                    b.HasOne("Carts.Core.Entities.UserProfile", "User")
                         .WithMany("Carts")
-                        .HasForeignKey("UserProfileUserId");
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("FK_Cart_UserProfile");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Carts.Core.Entities.Cart", b =>
