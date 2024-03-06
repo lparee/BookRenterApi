@@ -12,7 +12,8 @@ namespace Carts.Service
     public interface ICartService
     {
         Task<IEnumerable<BooksModel>> GetBookByNameAndAuthor(string name, string author);
-        Task<CartModel> AddToCart(CartModel cart, int userId);
+        Task<CartModel> AddToCart(int bookId, int userId);
+
         Task<CartModel> UpdateCart(CartModel cart);
         Task<bool> CheckOut(int cartId);
         Task<CartModel> GetCartByUserId(int userId);
@@ -27,11 +28,11 @@ namespace Carts.Service
             _cartRepository = cartRepository;
         }
 
-        public async Task<CartModel> AddToCart(CartModel cart, int userId)
+        public async Task<CartModel> AddToCart(int bookId, int userId)
         {
-            var cartEntity = MapToCartEntity(cart);
-            var addedCart = await _cartRepository.AddToCart(cartEntity, userId);
-            return MapToCartModel(addedCart);
+            //var cartEntity = MapToCartEntity(cart);
+            var addedcart =  await _cartRepository.AddToCart(bookId, userId);
+                return MapToCartModel(addedcart);
         }
 
         public async Task<CartModel> GetCartByUserId(int userId)
@@ -94,9 +95,10 @@ namespace Carts.Service
 
         private static Carts.Core.Entities.Cart MapToCartEntity(CartModel cartModel)
         {
+            List<CartBookMapping> mappings = new List<CartBookMapping>();
             return new Carts.Core.Entities.Cart
             {
-                CartId = cartModel.CartId,
+                //CartId = cartModel.CartId,
                 UserId = cartModel.UserId,
                 BooksLst = cartModel.Books
             };

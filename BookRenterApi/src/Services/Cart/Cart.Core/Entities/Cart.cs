@@ -7,9 +7,11 @@ namespace Carts.Core.Entities;
 public partial class Cart
 {
     public int CartId { get; set; }
-
-    public int? UserId { get; set; }
-    [NotMapped]
-    public required IList<int> BooksLst { get; set; }
+    [ForeignKey("UserProfile")]
+    public int UserId { get; set; }
+    public DateTime CreatedDate { get; set; }
     public virtual ICollection<CartBookMapping> Mappings { get; set; } = new List<CartBookMapping>();
+    [NotMapped]
+    public IList<int> BooksLst { get; set; } = new List<int>();
+
 }

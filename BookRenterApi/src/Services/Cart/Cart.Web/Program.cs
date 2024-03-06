@@ -153,7 +153,7 @@ namespace Cart.Web
                 //app.UseHttpsRedirection();
 
                 app.UseRouting();
-
+                app.UseMiddleware<GlobalExceptionHandleMiddleware>();
                 //app.UseAuthentication();
                 //app.UseAuthorization();
 

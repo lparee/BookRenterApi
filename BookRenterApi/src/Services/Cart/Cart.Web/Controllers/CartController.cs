@@ -15,6 +15,7 @@ namespace Carts.Web.Controllers
     {
         private readonly ICartService _cartService = cartService;
         private readonly IMemoryCache _cache = cache;
+
         private readonly int userId = 1; // I am assuming the guset user with userid 1 as Identity is not implemented 
         private readonly int maximumBooksCount = 5;
         private readonly int slidingWindowExpirationInMinutes = 10;
@@ -49,7 +50,6 @@ namespace Carts.Web.Controllers
         {
             if(string.IsNullOrEmpty(Author))
                 return BadRequest("Parameter value is expected");
-
             var result = await _cartService.GetBookByNameAndAuthor(string.Empty, Author);
             return Ok(result);
         }
@@ -57,7 +57,8 @@ namespace Carts.Web.Controllers
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="Author"></param>
+        /// <param name="BookName"></param>
+        /// <param name="BookAuthor"></param>
         /// <returns></returns>
         [HttpGet("{BookName}/{BookAuthor}")]
         [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
@@ -101,15 +102,18 @@ namespace Carts.Web.Controllers
         [HttpPost()]
         [ProducesResponseType(typeof(CartModel), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<CartModel>> AddToCart(CartModel cart)
+        public async Task<ActionResult<bool>> AddToCart(int bookId)
         {
             var cartBookCount = await _cartService.GetCartByUserId(userId);
 
             //5 books restriction in cart
-            if (cartBookCount.Books.Count() == maximumBooksCount || (cartBookCount.Books.Count() + cart.Books.Count) > 5)
+            if (cartBookCount.Books.Count() >= maximumBooksCount)
                 return BadRequest("you can add up to 5 books in a cart at a time");
 
-            var addedCart = await _cartService.AddToCart(cart, userId);
+            if (cartBookCount.Books.Contains(bookId))
+                return BadRequest("The Book already present in cart");
+
+            var addedCart = await _cartService.AddToCart(bookId, userId);
             _cache.Set(userId, addedCart);
 
             return CreatedAtAction(nameof(AddToCart), new { cartId = addedCart.CartId }, addedCart);

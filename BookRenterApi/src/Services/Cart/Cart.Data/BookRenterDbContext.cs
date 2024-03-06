@@ -32,13 +32,25 @@ public partial class BookRenterDbContext : DbContext
         modelBuilder.Entity<Cart>(entity =>
         {
             entity.HasKey(e => e.CartId).HasName("PK_Cart_CartId");
+            entity.Property(e => e.CartId)
+            .ValueGeneratedOnAdd();
 
             entity.ToTable("Cart");
 
             entity.HasMany(e => e.Mappings)
         .WithOne(e => e.Carts)
         .HasForeignKey(e => e.CartId).HasConstraintName("FK_Carts_Map");
-            ;
+
+        });
+
+        modelBuilder.Entity<CartBookMapping>(entity =>
+        {
+            entity.HasKey(e => e.CBMappingId).HasName("PK_MapId");
+            entity.Property(e => e.CBMappingId)
+            .ValueGeneratedOnAdd();
+
+            entity.ToTable("CartBookMapping");
+
         });
 
 
@@ -52,6 +64,7 @@ public partial class BookRenterDbContext : DbContext
             entity.HasMany(e => e.Mappings)
         .WithOne(e => e.Books)
         .HasForeignKey(e => e.CartId).HasConstraintName("FK_Book_Map");
+            
             //sedding data in book invetory 
             entity.HasData(
             new BookInventory { BookId = 1, Author = "Chetan", BookName = "Hamlet", Quantity = 3, Price = 100 },

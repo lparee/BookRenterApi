@@ -14,6 +14,4 @@ public partial class UserProfile
     public string LastName { get; set; } = "";
 
     public string Email { get; set; } = "";
-
-    public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
 }
