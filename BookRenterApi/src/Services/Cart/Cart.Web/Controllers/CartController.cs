@@ -82,14 +82,7 @@ namespace Carts.Web.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<CartModel>> GetCartByUserId(int userId)
         {
-            if (!_cache.TryGetValue(userId, out CartModel? cartData))
-            {
-                // If not, retrieve the data from the data source
-                cartData = await _cartService.GetCartByUserId(userId);
-
-                // Cache the data with a sliding expiration of 5 minutes
-                _cache.Set(userId, cartData, TimeSpan.FromMinutes(slidingWindowExpirationInMinutes));
-            }
+            var cartData = await GetCartFromCache(userId);
 
             return Ok(cartData);
         }
@@ -147,8 +140,32 @@ namespace Carts.Web.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<bool>> CheckOut(int cartId)
         {
+            var cart = await GetCartFromCache(userId);
+
+            if (cart == null)
+                return BadRequest("cart is empty");
+
+            var checkBooksAvailability = await _cartService.GetBookByIds(cart.Books.ToList(),true);
+
+            if (checkBooksAvailability.Any())
+                return BadRequest($"{string.Join(", ", checkBooksAvailability.Select(b => b.BookName))} are not available in library");
+
             var removed = await _cartService.CheckOut(cartId);
             return Ok(removed);
+        }
+
+        private async Task<CartModel?> GetCartFromCache(int userId)
+        {
+            if (!_cache.TryGetValue(userId, out CartModel? cartData))
+            {
+                // If not, retrieve the data from the data source
+                cartData = await _cartService.GetCartByUserId(userId);
+
+                // Cache the data with a sliding expiration of 5 minutes
+                _cache.Set(userId, cartData, TimeSpan.FromMinutes(slidingWindowExpirationInMinutes));
+            }
+
+            return cartData;
         }
     }
 }

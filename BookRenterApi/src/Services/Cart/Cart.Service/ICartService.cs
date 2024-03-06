@@ -12,6 +12,7 @@ namespace Carts.Service
     public interface ICartService
     {
         Task<IEnumerable<BooksModel>> GetBookByNameAndAuthor(string name, string author);
+        Task<IEnumerable<BooksModel>> GetBookByIds(List<int> bookIds, bool isNotAvailable = false);
         Task<CartModel> AddToCart(int bookId, int userId);
 
         Task<CartModel> UpdateCart(CartModel cart);
@@ -56,6 +57,12 @@ namespace Carts.Service
         public async Task<IEnumerable<BooksModel>> GetBookByNameAndAuthor(string name, string author)
         {
             var books = await _cartRepository.GetBookByNameAndAuthor(name, author);
+            return MapToBookModel(books);
+        }
+
+        public async Task<IEnumerable<BooksModel>> GetBookByIds(List<int> bookIds, bool isNotAvailable = false)
+        {
+            var books = await _cartRepository.GetBookByIds(bookIds, isNotAvailable);
             return MapToBookModel(books);
         }
         private static IEnumerable<BooksModel> MapToBookModel(IEnumerable<Carts.Core.Entities.BookInventory?> book)

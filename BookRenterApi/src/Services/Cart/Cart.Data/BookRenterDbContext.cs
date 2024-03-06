@@ -63,7 +63,7 @@ public partial class BookRenterDbContext : DbContext
             entity.Property(e => e.Price).HasColumnType("decimal(10, 2)");
             entity.HasMany(e => e.Mappings)
         .WithOne(e => e.Books)
-        .HasForeignKey(e => e.CartId).HasConstraintName("FK_Book_Map");
+        .HasForeignKey(e => e.BookId).HasConstraintName("FK_Book_Map");
             
             //sedding data in book invetory 
             entity.HasData(

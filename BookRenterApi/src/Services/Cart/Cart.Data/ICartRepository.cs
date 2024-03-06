@@ -9,6 +9,7 @@ namespace Carts.Data
     public interface ICartRepository
     {
         Task<IEnumerable<BookInventory?>> GetBookByNameAndAuthor(string name, string author);
+        Task<IEnumerable<BookInventory?>> GetBookByIds(List<int> bookIds, bool isNotAvailable = false);
         Task<Cart> AddToCart(int bookId, int userId);
         Task<Cart> UpdateCart(Cart cart);
         Task<bool> CheckOut(int Id);
@@ -31,6 +32,12 @@ namespace Carts.Data
                 Where(p => ((!string.IsNullOrEmpty(name) ? p.BookName.ToLower().StartsWith(name.ToLower()) : true)
                 && (!string.IsNullOrEmpty(author) ? p.Author.ToLower().StartsWith(author.ToLower()) : true))
                 && p.Quantity > 0).ToListAsync();
+        }
+
+        public async Task<IEnumerable<BookInventory?>> GetBookByIds(List<int> bookIds, bool isNotAvailable = false)
+        {
+            return await _dbContext.BooksCollection.
+                Where( p => bookIds.Contains(p.BookId) && (isNotAvailable ? p.Quantity < 1 : p.Quantity >= 1)).ToListAsync();
         }
 
         public async Task<Cart?> GetCartByUserId(int userId)
@@ -134,7 +141,11 @@ namespace Carts.Data
                 var book = _dbContext.BooksCollection.Where(b => cart.Mappings.Select(m => m.BookId).Contains(b.BookId));
 
                 //reducing book quantity to one                
-                book.ToList().ForEach(b => b.Quantity = (b.Quantity--));
+                book.ToList().ForEach(b => b.Quantity -= 1);
+
+                _dbContext.BooksCollection.UpdateRange(book.ToList());
+
+                _dbContext.CartBookMapping.RemoveRange(cart.Mappings);
 
                 _dbContext.Carts.Remove(cart);
 
