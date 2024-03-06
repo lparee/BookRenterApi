@@ -40,7 +40,7 @@ public partial class BookRenterDbContext : DbContext
         .HasForeignKey(e => e.CartId).HasConstraintName("FK_Carts_Map");
             ;
         });
-        
+
 
         modelBuilder.Entity<BookInventory>(entity =>
         {
@@ -52,6 +52,13 @@ public partial class BookRenterDbContext : DbContext
             entity.HasMany(e => e.Mappings)
         .WithOne(e => e.Books)
         .HasForeignKey(e => e.CartId).HasConstraintName("FK_Book_Map");
+            //sedding data in book invetory 
+            entity.HasData(
+            new BookInventory { BookId = 1, Author = "Chetan", BookName = "Hamlet", Quantity = 3, Price = 100 },
+            new BookInventory { BookId = 2, Author = "Bhagat", BookName = "Hamlet1", Quantity = 4, Price = 101 },
+            new BookInventory { BookId = 3, Author = "Amish", BookName = "Hamlet2", Quantity = 5, Price = 102 },
+            new BookInventory { BookId = 4, Author = "Harrish", BookName = "Hamlet3", Quantity = 2, Price = 103 },
+            new BookInventory { BookId = 5, Author = "Martin", BookName = "Hamlet4", Quantity = 1, Price = 104 });
         });
 
         modelBuilder.Entity<UserProfile>(entity =>
@@ -67,6 +74,11 @@ public partial class BookRenterDbContext : DbContext
             entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.FirstName).HasMaxLength(50);
             entity.Property(e => e.LastName).HasMaxLength(50);
+
+            //sedding data in userprofile 
+            entity.HasData(
+            new UserProfile { UserId = 1,  DisplayName = "Guest", FirstName = "Guest", Email = "abc@bca.com" },
+            new UserProfile { UserId = 2, DisplayName = "Robert", FirstName = "Robert", LastName = "Martin", Email = "robert@martin.com" });
         });
 
         OnModelCreatingPartial(modelBuilder);

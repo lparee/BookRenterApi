@@ -53,6 +53,8 @@ namespace Cart.Web
                           options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
                       });
 
+                builder.Services.AddMemoryCache();
+
                 // Adds Microsoft Identity platform (AAD v2.0) support to protect this Api
                 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 //        .AddMicrosoftIdentityWebApi(options =>

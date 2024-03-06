@@ -3,28 +3,36 @@ using Carts.Core.Models;
 using Carts.Web.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web.Resource;
+using Microsoft.Extensions.Caching.Memory;
+using Serilog;
 
 namespace Carts.Web.Controllers
 {
     //[Authorize]
     [ApiController]
     [Route("api/carts")]
-    public class CartController(ICartService cartService) : ControllerBase
+    public class CartController(ICartService cartService, IMemoryCache cache) : ControllerBase
     {
         private readonly ICartService _cartService = cartService;
+        private readonly IMemoryCache _cache = cache;
         private readonly int userId = 1; // I am assuming the guset user with userid 1 as Identity is not implemented 
         private readonly int maximumBooksCount = 5;
+        private readonly int slidingWindowExpirationInMinutes = 10;
 
         /// <summary>
         /// /
         /// </summary>
         /// <param name="Name"></param>
         /// <returns></returns>
-        [HttpGet("{Name}")]
+        //[HttpGet("{Name}")]
+        [HttpGet("BookName", Name = "BookName")]
         [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<BooksModel>> GetBookByName(string Name)
         {
+            if (string.IsNullOrEmpty(Name))
+                return BadRequest("Parameter value is expected");
+
             var result = await _cartService.GetBookByNameAndAuthor(Name, string.Empty);
             return Ok(result);
         }
@@ -34,13 +42,55 @@ namespace Carts.Web.Controllers
         /// </summary>
         /// <param name="Author"></param>
         /// <returns></returns>
-        [HttpGet]
+        [HttpGet("BookAuthor", Name = "BookAuthor")]
         [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<BooksModel>> GetBookByAuthor(string Author)
         {
+            if(string.IsNullOrEmpty(Author))
+                return BadRequest("Parameter value is expected");
+
             var result = await _cartService.GetBookByNameAndAuthor(string.Empty, Author);
             return Ok(result);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Author"></param>
+        /// <returns></returns>
+        [HttpGet("{BookName}/{BookAuthor}")]
+        [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BooksModel>> GetBookByAuthorAndName(string BookName, string BookAuthor)
+        {
+            if(string.IsNullOrEmpty(BookName) && string.IsNullOrEmpty(BookAuthor))
+                return BadRequest("Parameters values are expected");
+
+            var result = await _cartService.GetBookByNameAndAuthor(BookName, BookAuthor);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Author"></param>
+        /// <returns></returns>
+        [HttpGet("UserId", Name = "UserId")]
+        [ProducesResponseType(typeof(CartModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<CartModel>> GetCartByUserId(int userId)
+        {
+            if (!_cache.TryGetValue(userId, out CartModel? cartData))
+            {
+                // If not, retrieve the data from the data source
+                cartData = await _cartService.GetCartByUserId(userId);
+
+                // Cache the data with a sliding expiration of 5 minutes
+                _cache.Set(userId, cartData, TimeSpan.FromMinutes(slidingWindowExpirationInMinutes));
+            }
+
+            return Ok(cartData);
         }
 
         /// <summary>
@@ -60,7 +110,8 @@ namespace Carts.Web.Controllers
                 return BadRequest("you can add up to 5 books in a cart at a time");
 
             var addedCart = await _cartService.AddToCart(cart, userId);
-            
+            _cache.Set(userId, addedCart);
+
             return CreatedAtAction(nameof(AddToCart), new { cartId = addedCart.CartId }, addedCart);
         }
 

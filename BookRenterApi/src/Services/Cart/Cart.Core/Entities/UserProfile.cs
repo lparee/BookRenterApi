@@ -11,9 +11,9 @@ public partial class UserProfile
 
     public string FirstName { get; set; } = null!;
 
-    public string LastName { get; set; } = null!;
+    public string LastName { get; set; } = "";
 
-    public string Email { get; set; } = null!;
+    public string Email { get; set; } = "";
 
     public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
 }

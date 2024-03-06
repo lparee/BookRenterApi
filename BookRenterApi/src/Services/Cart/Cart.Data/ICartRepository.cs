@@ -26,7 +26,9 @@ namespace Carts.Data
         public async Task<IEnumerable<BookInventory?>> GetBookByNameAndAuthor(string name, string author)
         {
             return await _dbContext.BooksCollection.
-                Where(p => p.BookName.Equals(name) || p.Author.Equals(author)).ToListAsync();
+                Where(p => ((!string.IsNullOrEmpty(name) ? p.BookName.ToLower().StartsWith(name.ToLower()) :true)
+                && (!string.IsNullOrEmpty(author) ? p.Author.ToLower().StartsWith(author.ToLower()) : true))
+                && p.Quantity > 0).ToListAsync();
         }
 
         public async Task<Cart?> GetCartByUserId(int userId)
