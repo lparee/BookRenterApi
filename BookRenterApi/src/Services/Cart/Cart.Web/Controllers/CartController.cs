@@ -130,6 +130,7 @@ namespace Carts.Web.Controllers
                 return BadRequest($"{string.Join(", ", checkBooksAvailability.Select(b => b.BookName))} are not available in library");
 
             var removed = await _cartService.CheckOut(cart.CartId);
+            _cache.Remove(userId);
             return Ok(removed);
         }
 
