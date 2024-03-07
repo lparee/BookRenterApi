@@ -13,11 +13,7 @@ public partial class BookInventory
 
     public string Author { get; set; } = null!;
 
-    public int? CategoryId { get; set; }
-
     public int Quantity { get; set; }
 
-    public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
-
-    public virtual Category? Category { get; set; }
+    public virtual ICollection<CartBookMapping> Mappings { get; set; } = new List<CartBookMapping>();
 }

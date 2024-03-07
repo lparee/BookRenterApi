@@ -1,18 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
 
 namespace Carts.Core.Models
 {
     public  class CartModel
     {
+        [ReadOnly(true)]
         public int CartId { get; set; }
 
-        public int? UserId { get; set; }
+        public int UserId { get; set; }
 
-        [Required(ErrorMessage = "ProductId is required.")]
-        public int ProductId { get; set; }
+        public int BookId { get; set; }
 
-        [Required(ErrorMessage = "Quantity is required.")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be greater than 0.")]
-        public required int Quantity { get; set; }
+        [CustomValidator.CustomValidator.UniqueProduct(ErrorMessage = "Duplicate books are not allowed")]
+        public IList<int> Books { get; set; }
     }
 }

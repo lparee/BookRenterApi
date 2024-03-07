@@ -1,148 +1,150 @@
-using Carts.Service;
 using Carts.Core.Models;
-using Carts.Web.Common;
+using Carts.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Web.Resource;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Carts.Web.Controllers
 {
     //[Authorize]
     [ApiController]
     [Route("api/carts")]
-    public class CartController(ICartService cartService, IUserClaims userClaims) : ControllerBase
+    public class CartController(ICartService cartService, IMemoryCache cache) : ControllerBase
     {
         private readonly ICartService _cartService = cartService;
-        private readonly IUserClaims userClaims = userClaims;
-        
+        private readonly IMemoryCache _cache = cache;
+
+        private readonly int userId = 1; // I am assuming the user with userid 1 
+        private readonly int maximumBooksCount = 5;
+        private readonly int slidingWindowExpirationInMinutes = 10;
 
         /// <summary>
-        /// Get a specific cart by ID.
+        /// /
         /// </summary>
-        /// <param name="cartId">The ID of the cart to retrieve.</param>
-        /// <returns>The retrieved cart.</returns>
-        [HttpGet("{cartId}")]
+        /// <param name="Name"></param>
+        /// <returns></returns>
+        //[HttpGet("{Name}")]
+        [HttpGet("BookName", Name = "BookName")]
+        [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BooksModel>> GetBookByName(string Name)
+        {
+            if (string.IsNullOrEmpty(Name))
+                return BadRequest("Parameter value is expected");
+
+            var result = await _cartService.GetBookByNameAndAuthor(Name, string.Empty);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Author"></param>
+        /// <returns></returns>
+        [HttpGet("BookAuthor", Name = "BookAuthor")]
+        [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BooksModel>> GetBookByAuthor(string Author)
+        {
+            if(string.IsNullOrEmpty(Author))
+                return BadRequest("Parameter value is expected");
+            var result = await _cartService.GetBookByNameAndAuthor(string.Empty, Author);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="BookName"></param>
+        /// <param name="BookAuthor"></param>
+        /// <returns></returns>
+        [HttpGet("{BookName}/{BookAuthor}")]
+        [ProducesResponseType(typeof(BooksModel), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BooksModel>> GetBookByAuthorAndName(string BookName, string BookAuthor)
+        {
+            if(string.IsNullOrEmpty(BookName) && string.IsNullOrEmpty(BookAuthor))
+                return BadRequest("Parameters values are expected");
+
+            var result = await _cartService.GetBookByNameAndAuthor(BookName, BookAuthor);
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Author"></param>
+        /// <returns></returns>
+        [HttpGet("UserId", Name = "UserId")]
         [ProducesResponseType(typeof(CartModel), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //[RequiredScope(RequiredScopesConfigurationKey = "Read")]
-        public async Task<ActionResult<CartModel>> GetCartById(int cartId)
+        public async Task<ActionResult<CartModel>> GetCartByUserId(int userId)
         {
-            var LoginId = "1";//userClaims.GetCurrentUserId();
-            var isValid = await _cartService.IsCartIdValidAsync(cartId, LoginId);
-            
-            if (!isValid)
-            {
-                return NotFound();
-            }
+            var cartData = await GetCartFromCache(userId);
 
-            var cart = await _cartService.GetCartByIdAsync(cartId);
-            return Ok(cart);
+            return Ok(cartData);
         }
 
         /// <summary>
-        /// Get all carts for a specific user.
+        /// 
         /// </summary>
-        /// <param name="LoginId">The AD object ID of the user.</param>
-        /// <returns>The list of carts for the user.</returns>
-        [HttpGet("user/{LoginId}")]
-        [ProducesResponseType(typeof(List<CartModel>), StatusCodes.Status200OK)]
-        //[RequiredScope(RequiredScopesConfigurationKey = "AzureAdB2C:Scopes:Read")]
-        public async Task<ActionResult<List<CartModel>>> GetCartsByUserId(string LoginId)
-        {
-            var carts = await _cartService.GetCartsByUserIdAsync(LoginId);
-            return Ok(carts);
-        }
-
-        /// <summary>
-        /// Get all carts for a specific user.
-        /// </summary>
-        /// <param name="LoginId">The AD object ID of the user.</param>
-        /// <returns>The list of carts for the user.</returns>
-        [HttpGet()]
-        //[RequiredScope(RequiredScopesConfigurationKey = "AzureAdB2C:Scopes:Read")]
-        [ProducesResponseType(typeof(List<CartModel>), StatusCodes.Status200OK)]
-        public async Task<ActionResult<List<CartModel>>> GetCurrentUserCarts()
-        {
-            var LoginId = "1";//userClaims.GetCurrentUserId();
-            var carts = await _cartService.GetCartsByUserIdAsync(LoginId);
-            return Ok(carts);
-        }
-
-        /// <summary>
-        /// Add a new item to the user's cart.
-        /// </summary>
-        /// <param name="cart">The cart item to add.</param>
-        /// <param name="LoginId">The AD object ID of the user.</param>
-        /// <returns>The added cart item.</returns>
+        /// <param name="cart"></param>
+        /// <returns></returns>
         [HttpPost()]
         [ProducesResponseType(typeof(CartModel), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[RequiredScope(RequiredScopesConfigurationKey = "AzureAdB2C:Scopes:Write")]
-        public async Task<ActionResult<CartModel>> AddToCart(CartModel cart)
+        public async Task<ActionResult<bool>> AddToCart(int bookId)
         {
-            var LoginId = "1";//userClaims.GetCurrentUserId();
-            var isValid = await _cartService.IsProductIdValidAsync(cart.ProductId);
+            var cartBookCount = await _cartService.GetCartByUserId(userId);
 
-            if (!isValid)
-            {
-                ModelState.AddModelError("ProductId", "Invalid ProductId");
-                return BadRequest(ModelState);
-            }
-            
-            var addedCart = await _cartService.AddToCartAsync(cart, LoginId);
-            
-            return CreatedAtAction(nameof(GetCartById), new { cartId = addedCart.CartId }, addedCart);
+            //5 books restriction in cart
+            if (cartBookCount != null && cartBookCount.Books != null && cartBookCount.Books.Count() >= maximumBooksCount)
+                return BadRequest($"you can add up to {maximumBooksCount} books in a cart at a time");
+
+            if (cartBookCount != null && cartBookCount.Books != null && cartBookCount.Books.Contains(bookId))
+                return BadRequest("The Book already present in cart");
+
+            var addedCart = await _cartService.AddToCart(bookId, userId);
+            _cache.Set(userId, addedCart);
+
+            return CreatedAtAction(nameof(AddToCart), new { cartId = addedCart.CartId }, addedCart);
         }
 
         /// <summary>
-        /// Update an existing cart item.
+        /// 
         /// </summary>
-        /// <param name="cart">The updated cart item.</param>
-        /// <returns>The updated cart item.</returns>
-        [HttpPut()]
-        [ProducesResponseType(typeof(CartModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //[RequiredScope(RequiredScopesConfigurationKey = "AzureAdB2C:Scopes:Write")]
-        public async Task<ActionResult<CartModel>> UpdateCart(CartModel cart)
-        {
-            var LoginId = "1";//userClaims.GetCurrentUserId();
-            var isValid = await _cartService.IsCartIdValidAsync(cart.CartId, LoginId);
-
-            if (!isValid)
-            {
-                return NotFound();
-            }
-
-            var updatedCart = await _cartService.UpdateCartAsync(cart);
-           
-            return Ok(updatedCart);
-        }
-
-        /// <summary>
-        /// Remove an item from the user's cart.
-        /// </summary>
-        /// <param name="cartId">The ID of the cart item to remove.</param>
-        /// <returns>True if the item was successfully removed; otherwise, false.</returns>
-        [HttpDelete("{cartId}")]
+        /// <param name="cartId"></param>
+        /// <returns></returns>
+        [HttpDelete()]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //[RequiredScope(RequiredScopesConfigurationKey = "AzureAdB2C:Scopes:Write")]
-        public async Task<ActionResult<bool>> RemoveFromCart(int cartId)
+        public async Task<ActionResult<bool>> CheckOut()
         {
-            var LoginId = "1";//userClaims.GetCurrentUserId();
-            var isValid = await _cartService.IsCartIdValidAsync(cartId, LoginId);
+            var cart = await GetCartFromCache(userId);
 
-            if (!isValid)
-            {
-                return NotFound();
-            }
+            if (cart == null)
+                return BadRequest("cart is empty");
 
-            var removed = await _cartService.RemoveFromCartAsync(cartId);
+            var checkBooksAvailability = await _cartService.GetBookByIds(cart.Books.ToList(),true);
+
+            if (checkBooksAvailability.Any())
+                return BadRequest($"{string.Join(", ", checkBooksAvailability.Select(b => b.BookName))} are not available in library");
+
+            var removed = await _cartService.CheckOut(cart.CartId);
             return Ok(removed);
         }
 
-        
-    }
+        private async Task<CartModel?> GetCartFromCache(int userId)
+        {
+            if (!_cache.TryGetValue(userId, out CartModel? cartData))
+            {
+                // If not, retrieve the data from the data source
+                cartData = await _cartService.GetCartByUserId(userId);
 
+                // Cache the data with a sliding expiration of 5 minutes
+                _cache.Set(userId, cartData, TimeSpan.FromMinutes(slidingWindowExpirationInMinutes));
+            }
+
+            return cartData;
+        }
+    }
 }

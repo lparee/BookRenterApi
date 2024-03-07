@@ -1,5 +1,4 @@
-﻿using Microsoft.ApplicationInsights.DataContracts;
-
+﻿
 namespace Carts.Web.Middlewares
 {
     public class ResponseBodyLoggingMiddleware : IMiddleware
@@ -21,9 +20,6 @@ namespace Carts.Web.Middlewares
                 // Copy body back to so its available to the user agent
                 memoryStream.Position = 0;
                 await memoryStream.CopyToAsync(originalBodyStream);
-                // Write response body to App Insights
-                var requestTelemetry = context.Features.Get<RequestTelemetry>();
-                requestTelemetry?.Properties.Add("ResponseBody", responseBody);
             }
             finally
             {
