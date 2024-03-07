@@ -1,6 +1,5 @@
 using Carts.Service;
 using Carts.Data;
-using Carts.Web.Common;
 using Carts.Web.Middlewares;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -33,8 +32,6 @@ namespace Cart.Web
                 var configuration = builder.Configuration;
                 // Add services to the container.
 
-                //builder.Services.AddApplicationInsightsTelemetry();
-
                 builder.Host.UseSerilog((context, services, loggerConfiguration) => loggerConfiguration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
@@ -54,38 +51,6 @@ namespace Cart.Web
                       });
 
                 builder.Services.AddMemoryCache();
-
-                // Adds Microsoft Identity platform (AAD v2.0) support to protect this Api
-                //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                //        .AddMicrosoftIdentityWebApi(options =>
-
-                //        {
-                //            configuration.Bind("AzureAdB2C", options);
-                //            options.Events = new JwtBearerEvents();
-
-                //            /// <summary>
-                //            /// Below you can do extended token validation and check for additional claims, such as:
-                //            ///
-                //            /// - check if the caller's account is homed or guest via the 'acct' optional claim
-                //            /// - check if the caller belongs to right roles or groups via the 'roles' or 'groups' claim, respectively
-                //            ///
-                //            /// Bear in mind that you can do any of the above checks within the individual routes and/or controllers as well.
-                //            /// For more information, visit: https://docs.microsoft.com/azure/active-directory/develop/access-tokens#validate-the-user-has-permission-to-access-this-data
-                //            /// </summary>
-
-                //            //options.Events.OnTokenValidated = async context =>
-                //            //{
-                //            //    string[] allowedClientApps = { /* list of client ids to allow */ };
-
-                //            //    string clientAppId = context?.Principal?.Claims
-                //            //        .FirstOrDefault(x => x.Type == "azp" || x.Type == "appid")?.Value;
-
-                //            //    if (!allowedClientApps.Contains(clientAppId))
-                //            //    {
-                //            //        throw new System.Exception("This client is not authorized");
-                //            //    }
-                //            //};
-                //        }, options => { configuration.Bind("AzureAdB2C", options); });
 
                 // The following flag can be used to get more descriptive errors in development environments
                 IdentityModelEventSource.ShowPII = false;
@@ -120,6 +85,9 @@ namespace Cart.Web
 
                 var app = builder.Build();
 
+                app.UseMiddleware<GlobalExceptionHandleMiddleware>(); //To get formatted exceptions in response
+
+                //for logging exception
                 app.UseExceptionHandler(errorApp =>
                 {
                     errorApp.Run(async context =>
@@ -153,7 +121,6 @@ namespace Cart.Web
                 //app.UseHttpsRedirection();
 
                 app.UseRouting();
-                app.UseMiddleware<GlobalExceptionHandleMiddleware>();
                 //app.UseAuthentication();
                 //app.UseAuthorization();
 

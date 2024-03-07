@@ -1,10 +1,7 @@
-using Carts.Service;
 using Carts.Core.Models;
-using Carts.Web.Common;
+using Carts.Service;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Identity.Web.Resource;
 using Microsoft.Extensions.Caching.Memory;
-using Serilog;
 
 namespace Carts.Web.Controllers
 {
@@ -16,7 +13,7 @@ namespace Carts.Web.Controllers
         private readonly ICartService _cartService = cartService;
         private readonly IMemoryCache _cache = cache;
 
-        private readonly int userId = 1; // I am assuming the guset user with userid 1 as Identity is not implemented 
+        private readonly int userId = 1; // I am assuming the user with userid 1 
         private readonly int maximumBooksCount = 5;
         private readonly int slidingWindowExpirationInMinutes = 10;
 
@@ -100,10 +97,10 @@ namespace Carts.Web.Controllers
             var cartBookCount = await _cartService.GetCartByUserId(userId);
 
             //5 books restriction in cart
-            if (cartBookCount.Books.Count() >= maximumBooksCount)
-                return BadRequest("you can add up to 5 books in a cart at a time");
+            if (cartBookCount != null && cartBookCount.Books != null && cartBookCount.Books.Count() >= maximumBooksCount)
+                return BadRequest($"you can add up to {maximumBooksCount} books in a cart at a time");
 
-            if (cartBookCount.Books.Contains(bookId))
+            if (cartBookCount != null && cartBookCount.Books != null && cartBookCount.Books.Contains(bookId))
                 return BadRequest("The Book already present in cart");
 
             var addedCart = await _cartService.AddToCart(bookId, userId);
@@ -115,30 +112,12 @@ namespace Carts.Web.Controllers
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="cart"></param>
-        /// <returns></returns>
-        [HttpPut()]
-        [ProducesResponseType(typeof(CartModel), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<CartModel>> UpdateCart(CartModel cart)
-        {
-
-            var updatedCart = await _cartService.UpdateCart(cart);
-           
-            return Ok(updatedCart);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="cartId"></param>
         /// <returns></returns>
-        [HttpDelete("{cartId}")]
+        [HttpDelete()]
         [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<bool>> CheckOut(int cartId)
+        public async Task<ActionResult<bool>> CheckOut()
         {
             var cart = await GetCartFromCache(userId);
 
@@ -150,7 +129,7 @@ namespace Carts.Web.Controllers
             if (checkBooksAvailability.Any())
                 return BadRequest($"{string.Join(", ", checkBooksAvailability.Select(b => b.BookName))} are not available in library");
 
-            var removed = await _cartService.CheckOut(cartId);
+            var removed = await _cartService.CheckOut(cart.CartId);
             return Ok(removed);
         }
 

@@ -1,11 +1,6 @@
 ﻿using Carts.Core.Entities;
 using Carts.Core.Models;
 using Carts.Data;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Carts.Service
 {
@@ -14,8 +9,6 @@ namespace Carts.Service
         Task<IEnumerable<BooksModel>> GetBookByNameAndAuthor(string name, string author);
         Task<IEnumerable<BooksModel>> GetBookByIds(List<int> bookIds, bool isNotAvailable = false);
         Task<CartModel> AddToCart(int bookId, int userId);
-
-        Task<CartModel> UpdateCart(CartModel cart);
         Task<bool> CheckOut(int cartId);
         Task<CartModel> GetCartByUserId(int userId);
     }
@@ -40,13 +33,6 @@ namespace Carts.Service
         {
             var cart = await _cartRepository.GetCartByUserId(userId);
             return  MapToCartModel(cart);
-        }
-
-        public async Task<CartModel> UpdateCart(CartModel cart)
-        {
-            var cartEntity = MapToCartEntity(cart);
-            var updatedCart = await _cartRepository.UpdateCart(cartEntity);
-            return MapToCartModel(updatedCart);
         }
 
         public async Task<bool> CheckOut(int cartId)
@@ -92,12 +78,7 @@ namespace Carts.Service
                     Books = cart.Mappings.Select(c => c.BookId).ToList()
                 };
             else
-                return new CartModel
-                {
-                    CartId = -1,
-                    UserId = -1,
-                    Books = new List<int>()
-                };
+                return new CartModel();
         }
 
         private static Carts.Core.Entities.Cart MapToCartEntity(CartModel cartModel)
@@ -105,7 +86,6 @@ namespace Carts.Service
             List<CartBookMapping> mappings = new List<CartBookMapping>();
             return new Carts.Core.Entities.Cart
             {
-                //CartId = cartModel.CartId,
                 UserId = cartModel.UserId,
                 BooksLst = cartModel.Books
             };

@@ -16,8 +16,8 @@ public partial class BookRenterDbContext : DbContext
     }
 
     //override on configuration for scafolding EF core DB
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Initial Catalog=BookRenterDB;Integrated Security=SSPI; MultipleActiveResultSets=true;TrustServerCertificate=True;");
+    //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    //    => optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Initial Catalog=BookRenterDB;Integrated Security=SSPI; MultipleActiveResultSets=true;TrustServerCertificate=True;");
 
 
     public virtual DbSet<Cart> Carts { get; set; }

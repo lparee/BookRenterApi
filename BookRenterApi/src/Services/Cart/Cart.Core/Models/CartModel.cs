@@ -1,6 +1,4 @@
-﻿using Carts.Core.Entities;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel;
 
 namespace Carts.Core.Models
 {
@@ -14,6 +12,6 @@ namespace Carts.Core.Models
         public int BookId { get; set; }
 
         [CustomValidator.CustomValidator.UniqueProduct(ErrorMessage = "Duplicate books are not allowed")]
-        public required IList<int> Books { get; set; }
+        public IList<int> Books { get; set; }
     }
 }
